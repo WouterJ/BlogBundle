@@ -6,6 +6,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\Request;
 use FOS\RestBundle\View\ViewHandlerInterface;
+use Symfony\Component\Security\Core\SecurityContext;
 use Symfony\Component\Templating\EngineInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Cmf\Bundle\BlogBundle\Document\Blog;
@@ -23,18 +24,21 @@ class BlogController
     protected $templating;
     protected $viewHandler;
     protected $dm;
-    protected $pwfc;
+    /**
+     * @var SecurityContext
+     */
+    protected $securityContext;
 
     public function __construct(
-        EngineInterface $templating, 
+        EngineInterface $templating,
         ViewHandlerInterface $viewHandler = null,
         DocumentManager $dm,
-        PublishWorkflowCheckerInterface $pwfc
+        SecurityContext $securityContext
     ) {
         $this->templating = $templating;
         $this->viewHandler = $viewHandler;
         $this->dm = $dm;
-        $this->pwfc = $pwfc;
+        $this->securityContext = $securityContext;
     }
 
     protected function renderResponse($contentTemplate, $params)
@@ -57,7 +61,7 @@ class BlogController
     {
         $post = $contentDocument;
 
-        if (true !== $this->pwfc->checkIsPublished($post)) {
+        if (true !== $this->securityContext->isGranted('VIEW', $post)) {
             throw new NotFoundHttpException(sprintf(
                 'Post "%s" is not published'
             , $post->getTitle()));
